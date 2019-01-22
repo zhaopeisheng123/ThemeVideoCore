@@ -1,0 +1,219 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+<script src="~/lib/jquery/dist/jquery.js"></script>
+<script src="~/js/md5.js"></script>
+<script type="text/javascript">
+    var fileData;
+    var formData = new FormData();
+    var chunk = 0;
+    var chunks;
+    var totalSize;
+    var eachSize;
+    var md5Name;
+    function uploadFile(event) {
+        fileData = event.target.files;
+    }
+
+    $(document).ready(function () {
+
+        $("#submitBtn").click(function () {
+            //文件md5
+            //md5Name = hex_md5("123") + ".jpg";
+            //// 设置分片的开始结尾
+            //eachSize = 1024;
+            //totalSize = fileData[0].size;
+            //chunks = Math.ceil(totalSize / eachSize);
+
+
+            ////upload();
+
+
+
+
+
+
+            var data = $('#form_Modify').serializeArray();
+            if (fileData == undefined || fileData.length == 0) return;
+            formData.append("file", fileData[0]);
+            data.forEach((item) => {
+                formData.append(item.name, item.value);
+            })
+
+            $.ajax({
+                url: $("#url").val(),
+                type: "POST",
+                processData: false,
+                contentType: false,
+                data: formData,
+                success: function (d) {
+
+                }
+            });
+        });
+
+
+
+        $("#submitQuery").click(function () {
+            $.ajax({
+                url: $("#url1").val(),
+                type: "POST",
+                processData: false,
+                contentType: "application/json",
+                data: $("#Condition").val(),
+                success: function (d) {
+                    console.log(d);
+                    var result = eval(d);
+                    $("#Allsum").html(result.data.sum);
+                    var html = "<tr><th style='width: 100px;'>时间</th><th>视频名称</th><th>海关名称</th><th>文件名</th><th>文件类型</th><th>视频地址</th><th>标签json</th><tr>";
+                    $.each(result.data.dto, function (d) {
+                        html += "<tr><td>" + this.uploadTime + "</td><td>" + this.fileName + "</td><td>" + this.orgName + "</td><td>" + this.displayName + "</td><td>" + this.fileType + "</td><td>" + this.url + "</td><td>" + this.tags + "</td></tr>";
+
+                    })
+                    $("#querylist").html(html);
+
+                }
+            });
+
+        })
+
+        $("#breakpointDownloadBtn").click(function () {
+            window.open("http://127.0.0.1:4165/api/Export/BreakpointDownload?name=04912b82-567f-4ef5-937c-67fd0805203f.jpg");
+        });
+
+        $("#submitExecl").click(function () {
+            //批量下载
+            //window.open("http://localhost:4165/api/Export/Batchdownload?urls=http://szytest.oss-cn-beijing.aliyuncs.com/01b4f793-7e23-4f12-b9fc-db2460aa044c.mp4,https://szytest.oss-cn-beijing.aliyuncs.com/131f2d0b-73e5-473e-88c7-890916de1dc4.jpg,https://szytest.oss-cn-beijing.aliyuncs.com/165411e0-5be8-4418-a56c-a64f1834eacf.flv,https://szytest.oss-cn-beijing.aliyuncs.com/179ca850-20ab-4822-b59a-811654b0a7d8.crt");
+
+            //导出execl
+            var ids = "510e36c4-c1a3-4d7f-b549-1a753336fa55,f2db4545-af67-4512-a052-652459d81048,3ad435e2-e0a4-435b-aaec-ba4ab8439c65"
+            window.open("http://localhost:4165/api/Export/ExportDate?ids=" + ids);
+
+        })
+    });
+
+    function upload() {
+        var blobFrom = chunk * eachSize; // 分段开始
+        var blobTo = (chunk + 1) * eachSize > totalSize ? totalSize : (chunk + 1) * eachSize;
+        formData = new FormData();
+        $.ajax({
+            url: 'http://127.0.0.1:4165/api/UploadHand/GetFileResumePoint',
+            type: "POST",
+            data: { md5Name: md5Name },
+            success: function (d) {
+                if (d != blobFrom) {
+                    alert("文件分片失败");
+                    return;
+                }
+
+                var data = $('#form_Modify').serializeArray();
+                if (fileData == undefined || fileData.length == 0) return;
+                formData.append("file", fileData[0].slice(blobFrom, blobTo));
+                formData.append("md5Name", md5Name);
+                formData.append("range", blobFrom + "-" + blobTo)
+                $.ajax({
+                    url: 'http://127.0.0.1:4165/api/UploadHand/FileResume',
+                    type: "POST",
+                    processData: false,
+                    contentType: false,
+                    data: formData,
+                    success: function (d) {
+                        chunk++;
+                        if (chunk < chunks) {
+                            upload();
+                        }
+                        else {
+                            var data = $('#form_Modify').serializeArray();
+                            data.forEach((item) => {
+                                formData.append(item.name, item.value);
+                            })
+                            formData.append("name", md5Name);
+
+                            $.ajax({
+                                url: 'http://127.0.0.1:4165/api/UploadHand/UploadFileByName',
+                                type: "POST",
+                                processData: false,
+                                contentType: false,
+                                data: formData,
+                                success: function (d) {
+
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+
+    }
+
+    /*
+     *下载文件
+     * options:{
+     *      url:'',  //下载地址
+     *      isNewWinOpen:false,是否新窗口打开
+     *      data:{name:value}, //要发送的数据
+     *      method:'post'
+     * }
+     */
+    function downLoadFile(url, data, method, isNewWinOpen) {
+        var config = {
+            url: url,
+            data: (data = data || {}),
+            method: (method = method || "GET"),
+            isNewWinOpen: (isNewWinOpen = isNewWinOpen || false)
+        };
+        var $iframe = $('<div style="display: none"><iframe id="down-file-iframe" name="down-file-iframe" /></div>');
+        var $form = $('<form target="down-file-iframe" method="' + config.method + '" action="' + config.url + '" />');
+        if (config.isNewWinOpen) {
+            $form.attr("target", "_blank");
+        }
+
+        for (var i = 0; i < config.data.length; i++) {
+            $form.append('<input type="hidden" name="OrgName" value="' + config.data[i].OrgName + '" />');
+            $form.append('<input type="hidden" name="AppName" value="' + config.data[i].AppName + '" />');
+            $form.append('<input type="hidden" name="ImageTime" value="' + config.data[i].ImageTime + '" />');
+            $form.append('<input type="hidden" name="Url" value="' + config.data[i].Url + '" />');
+        }
+        $iframe.append($form);
+        $(document.body).append($iframe);
+        $form.submit();
+
+    }
+</script>
+<div><span>请求地址</span> <input type="text" name="url" id="url" value="http://172.16.101.17:4166/api/UploadHand/UploadFile" /></div>
+<form id="form_Modify" action="">
+    <input type="file" id="fileUpload" multiple="multiple" accept=".jpg,.jpeg,.png,.gif" onchange="uploadFile(event)">
+    <div><span>标签</span> <textarea name="tags" id="tags"></textarea></div>
+    <div><span>名称</span> <input type="text" name="displayName" id="displayName" /></div>
+    <div><span>组织机构</span> <input type="text" name="orgId" id="orgId" value="AEFC005E-5601-4BA2-8750-04B399528193" /></div>
+    <div><span>appId</span> <input type="text" name="appId" id="appId" value="3E11709F-7DF0-42D8-8764-26F802B81444" /></div>
+    <div>
+        <span>资源类型</span>
+        <select id="themeType" name="themeType">
+            <option value="1" selected="selected">事件</option>
+            <option value="2">资源</option>
+        </select>
+    </div>
+    <div><span>备注</span> <textarea name="remark" id="remark"></textarea></div>
+</form>
+<button id="submitBtn">上传</button>
+<button id="breakpointDownloadBtn">断点下载</button>
+<div>
+    <input type="text" name="url1" id="url1" value="http://172.16.101.17:4166/api/Theme/GetTagsByCondition" />
+    <textarea style="width:300px;height:270px" name="Condition" id="Condition">{
+                                               "StartTime":"2018-01-01",
+                                               "EndTime":"2018-02-02",
+                                               "From":1,
+                                               "Size":10,
+                                               "OrgId":"GUID",
+                                               "AppId":"GUID",
+                                               "Tags":"{'a':'a'}"
+                                               }</textarea>
+    <button id="submitQuery">查询</button>
+</div>
+<div>总数：<span id="Allsum"></span></div>
+<table id="querylist"></table>
+<button id="submitExecl">导出EXECL</button>

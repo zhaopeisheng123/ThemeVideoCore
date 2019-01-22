@@ -1,0 +1,7 @@
+﻿consul agent -server -bootstrap-expect 1 -data-dir C:\consul -bind 172.16.20.251 --client 0.0.0.0 -ui
+
+-server 服务器方式启动
+-bootstrap-expect 1 表示在两个集群中选择一个leader，改为1的话，那就是默认自己为leader
+-dtta-dir 表示consul的文件路径
+-bind 绑定的是本机的地址
+-ui web ui

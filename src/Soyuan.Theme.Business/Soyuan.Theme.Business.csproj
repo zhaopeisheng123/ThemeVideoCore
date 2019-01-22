@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="KafKaLogic.cs~RF9795be8.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Confluent.Kafka" Version="1.0.0-beta2" />
+    <PackageReference Include="Quartz" Version="3.0.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Soyuan.Theme.Contracts\Soyuan.Theme.Contracts.csproj" />
+    <ProjectReference Include="..\Soyuan.Theme.Core\Soyuan.Theme.Core.csproj" />
+    <ProjectReference Include="..\Soyuan.Theme.Domain\Soyuan.Theme.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
